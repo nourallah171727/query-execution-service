@@ -1,6 +1,7 @@
 package com.example.demo.controller;
 
 import com.example.demo.entity.Query;
+import com.example.demo.role.Role;
 import com.example.demo.service.QueryService;
 import org.springframework.web.bind.annotation.*;
 
@@ -34,6 +35,6 @@ public class QueryController {
     }
     @GetMapping("/execute")
     public List<List<Object>> executeQuery(@RequestParam Long query) {
-        return service.executeQuery(query);
+        return service.executeQuery(query, Role.USER);
     }
 }
