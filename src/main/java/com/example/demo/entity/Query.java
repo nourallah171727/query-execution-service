@@ -1,7 +1,7 @@
 package com.example.demo.entity;
 
 import jakarta.persistence.*;
-
+@Table(name = "query")
 @Entity
 public class Query {
     @Id
