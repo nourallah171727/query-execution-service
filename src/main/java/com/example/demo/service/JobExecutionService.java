@@ -37,24 +37,30 @@ public class JobExecutionService {
         // 1) load job
         QueryJob job = jobRepo.findById(jobId).orElseThrow(()->new IllegalArgumentException("can't execute a not existing job"));
 
+        if(job.getStatus()!=QueryJobStatus.QUEUED){
+            throw new IllegalStateException("the job is not in the state to be executed");
+        }
+
         long queryId = job.getQueryId();
 
         try {
-            // 2) cache short-circuit
+            //2) mark job as running
+            markRunning(job);
+            // 3) cache short-circuit
             if (cache.contains(queryId)) {
                 markSucceeded(job);
                 return;
             }
 
-            // 3) get SQL text
+            // 4) get SQL text
             String sql = queryRepo.findSqlById(queryId);
 
-            // 4) run SQL (serialize result to JSON-ish)
+            // 5) run SQL (serialize result to JSON-ish)
             List<Map<String, Object>> rows = jdbc.queryForList(sql);
             String json = com.fasterxml.jackson.databind.json.JsonMapper.builder()
                     .build().writeValueAsString(rows);
 
-            // 5) cache + mark success
+            // 6) cache + mark success
             cache.put(queryId, json);
             markSucceeded(job);
         } catch (Exception e) {
@@ -71,6 +77,11 @@ public class JobExecutionService {
     protected void markFailed(QueryJob job, String message) {
         job.setStatus(QueryJobStatus.FAILED);
         job.setError(message);
+        jobRepo.save(job);
+    }
+    protected void markRunning(QueryJob job){
+        job.setStatus(QueryJobStatus.RUNNING);
+        job.setError(null);
         jobRepo.save(job);
     }
 }
