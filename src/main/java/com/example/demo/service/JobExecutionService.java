@@ -1,7 +1,6 @@
 package com.example.demo.service;
 
 import com.example.demo.cache.QueryResultCache;
-import com.example.demo.entity.Query;
 import com.example.demo.entity.QueryJob;
 import com.example.demo.entity.enums.QueryJobStatus;
 import com.example.demo.repository.QueryJobRepository;
@@ -35,10 +34,10 @@ public class JobExecutionService {
     @Async("queryExecutor")
     public void executeJobAsync(long jobId) {
         // 1) load job
-        QueryJob job = jobRepo.findById(jobId).orElseThrow(()->new IllegalArgumentException("can't execute a not existing job"));
+        QueryJob job = jobRepo.findById(jobId).orElse(null);
 
-        if(job.getStatus()!=QueryJobStatus.QUEUED){
-            throw new IllegalStateException("the job is not in the state to be executed");
+        if(job==null || job.getStatus()!=QueryJobStatus.QUEUED){
+            return;
         }
 
         long queryId = job.getQueryId();

@@ -11,4 +11,5 @@ public class InMemoryQueryResultCache implements QueryResultCache {
     @Override public String get(long queryId) { return map.get(queryId); }
     @Override public void put(long queryId, String json) { map.put(queryId, json); }
     @Override public boolean contains(long queryId) { return map.containsKey(queryId); }
+    @Override public void clear(){map.clear();}
 }
