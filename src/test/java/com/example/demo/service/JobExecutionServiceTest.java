@@ -6,6 +6,7 @@ import com.example.demo.entity.enums.QueryJobStatus;
 import com.example.demo.helper.TestHelper;
 import com.example.demo.repository.QueryJobRepository;
 import com.example.demo.repository.QueryRepository;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -36,6 +37,11 @@ class JobExecutionServiceTest {
 
     @Autowired
     private TestHelper helper;
+    @AfterEach
+    void cleanUp() {
+        jobRepo.deleteAll();
+        queryRepo.deleteAll();
+    }
 
     // Utility wait method
     private void awaitJobCompletion(long jobId, long timeoutMs) throws InterruptedException {
