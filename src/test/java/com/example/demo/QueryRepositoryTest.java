@@ -17,7 +17,7 @@ class QueryRepositoryTest {
     @Test
     void findSqlById_shouldReturnQueryText() {
         // assuming you already have a row in `query` table
-        Long existingId = 6L;
+        Long existingId = 38L;
 
         String sql = queryRepository.findSqlById(existingId);
 
