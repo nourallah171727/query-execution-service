@@ -16,4 +16,24 @@ public class GlobalExceptionHandler {
                 .status(HttpStatus.BAD_REQUEST)
                 .body(Map.of("error", "Bad SQL syntax or invalid query"));
     }
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ResponseEntity<Map<String, Object>> handleIllegalArgument(IllegalArgumentException ex) {
+        return ResponseEntity
+                .status(HttpStatus.BAD_REQUEST)
+                .body(Map.of(
+                        "error", "Invalid argument",
+                        "message", ex.getMessage(),
+                        "status", HttpStatus.BAD_REQUEST.value()
+                ));
+    }
+    @ExceptionHandler(Exception.class)
+    public ResponseEntity<Map<String, Object>> handleGeneric(Exception ex) {
+        return ResponseEntity
+                .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(Map.of(
+                        "error", "Internal server error",
+                        "message", ex.getMessage(),
+                        "status", HttpStatus.INTERNAL_SERVER_ERROR.value()
+                ));
+    }
 }
