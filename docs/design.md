@@ -77,13 +77,13 @@ throughout the app
 - ## Thread pool configuration
   The number of threads in the executor pool was chosen empirically and is not optimized for maximum throughput.
   A production setup should analyze the ratio of I/O-bound to CPU-bound operations and tune the pool size accordingly.
-  - ## Database privileges
+- ## Database privileges
   The application assumes that the configured MySQL user account has appropriate privileges on the database. These privileges enforce read-only access to the analytical dataset. In a more robust implementation, the system should include a startup validation mechanism to verify correct privilege assignments.
-  - ## Read-only dataset
+- ## Read-only dataset
   The current version enforces a read-only dataset for simplicity.
   In a realistic environment, administrators would have full read/write access, while regular users would be limited to querying.
   Implementing authentication and authorization would be essential to achieve this separation.
-  - ## Testing and performance evaluation
+- ## Testing and performance evaluation
   The existing tests cover the main functional paths, but edge cases and high-concurrency scenarios still need further coverage.
   Additionally, load testing would be crucial to validate performance under realistic workloads.
   For this, tools such as Locust can be used to simulate concurrent user behavior and monitor response times through its web-based UI.
