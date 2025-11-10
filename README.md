@@ -7,7 +7,7 @@ Queries are persisted in MySQL and cached in an in-memory `ConcurrentHashMap` fo
 - Lightweight in-memory caching
 - Persistent MySQL storage
 - restoring interrupted queries due to app crashes for example
-## ⚙️ Setup Instructions
+## ⚙️ Setup Instructions for code execution
 
 ### Prerequisites
 - Java 17+
