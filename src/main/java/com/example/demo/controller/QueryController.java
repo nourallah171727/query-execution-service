@@ -78,6 +78,6 @@ public class QueryController {
                 response.put("message", "Job still processing, please retry later.");
             }
         }
-        return response;
+        return response ;
     }
 }
