@@ -1,3 +1,4 @@
+## !! Please read the design.md file under project root /docs/design.md for a complete explanation of design and limitations !!
 ## Asynchronous Query Execution API with Caching
 A RESTful Spring Boot application that executes analytical SQL queries asynchronously.
 Queries are persisted in MySQL and cached in an in-memory `ConcurrentHashMap` for faster retrieval.
@@ -60,7 +61,7 @@ Queries are persisted in MySQL and cached in an in-memory `ConcurrentHashMap` fo
   )
   ```
 3. (Optional: if you want to run the tests and see results) import the csv file of the titanic dataset into the passenger's table from here : https://github.com/datasciencedojo/datasets/blob/master/titanic.csv
-4. make sure to create a mySQL with username = "user" and password="analytic":
+4. make sure to create a mySQL with username = "user" and password="analytics":
    ```sql
     CREATE USER 'user'@'localhost' IDENTIFIED BY 'analytic';
    ```

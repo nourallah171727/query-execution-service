@@ -18,9 +18,13 @@ import java.util.concurrent.LinkedBlockingQueue;
 public class QueryJobDispatcher {
     private final QueryJobRepository jobRepo;
     private final JobExecutionService executor;
-
+    //we chose BlockingQueue so that a thread stays blocked as much as the queue empty
+    //it's also the standard for multi threaded envs
     private final BlockingQueue<Long> queue = new LinkedBlockingQueue<>();
+    //volatile here is crucial ,it ensures that every thread reads from RAM and writes to RAM
+    //that way the thread sees instantly when running is set to false
     private volatile boolean running = true;
+    //the consumer that's going to poll the queue and executes them
     private Thread consumer;
 
     public QueryJobDispatcher(QueryJobRepository jobRepo, JobExecutionService executor) {

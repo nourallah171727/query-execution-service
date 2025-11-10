@@ -15,7 +15,7 @@ public class QueryJobSubmitterService {
             this.jobRepo = jobRepo;
             this.dispatcher = dispatcher;
         }
-
+        //simply adds the QueryJob to dispatcher's in memo queue for processing
         public long submit(long queryId) {
             QueryJob job = new QueryJob(queryId, QueryJobStatus.QUEUED);
             job = jobRepo.save(job);

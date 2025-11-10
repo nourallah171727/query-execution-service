@@ -7,6 +7,7 @@ import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 
 import java.util.Map;
+//catches Exceptions and maps them into nice looking responses
 @ControllerAdvice
 public class GlobalExceptionHandler {
     @ExceptionHandler(DataAccessException.class)

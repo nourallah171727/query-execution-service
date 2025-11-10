@@ -25,20 +25,4 @@ public class QueryService {
     public List<Query> getAllQueries() {
         return repository.findAll();
     }
-    public List<List<Object>> executeQuery(Long id) {
-        Query q = repository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Query not found"));
-        return jdbcTemplate.query(q.getText(), rs -> {
-            List<List<Object>> rows = new ArrayList<>();
-            int colCount = rs.getMetaData().getColumnCount();
-            while (rs.next()) {
-                List<Object> row = new ArrayList<>();
-                for (int i = 1; i <= colCount; i++) {
-                    row.add(rs.getObject(i));
-                }
-                rows.add(row);
-            }
-            return rows;
-        });
-    }
 }

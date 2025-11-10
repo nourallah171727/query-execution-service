@@ -6,7 +6,7 @@ import org.springframework.scheduling.annotation.EnableAsync;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 
 import java.util.concurrent.Executor;
-
+//configures the pool thread for query jobs
 @Configuration
 @EnableAsync
 public class AsyncConfig {
