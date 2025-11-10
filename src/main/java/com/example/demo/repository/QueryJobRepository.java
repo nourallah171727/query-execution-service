@@ -15,7 +15,7 @@ import java.util.List;
 public interface QueryJobRepository extends JpaRepository<QueryJob, Long> {
     List<QueryJob> findByStatusIn(Collection<QueryJobStatus> statuses);
 
-    List<QueryJob> findTop200ByStatusOrderByIdAsc(QueryJobStatus status);
+    long countByStatus(QueryJobStatus status);
 
     // Recovery helper: RUNNING -> QUEUED
     @Modifying

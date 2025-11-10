@@ -1,16 +1,13 @@
 package com.example.demo.dispatcher;
 
 
-import com.example.demo.entity.Query;
 import com.example.demo.entity.QueryJob;
 import com.example.demo.entity.enums.QueryJobStatus;
 import com.example.demo.repository.QueryJobRepository;
-import com.example.demo.repository.QueryRepository;
 import com.example.demo.service.JobExecutionService;
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
 import org.springframework.stereotype.Component;
-import org.springframework.transaction.annotation.Transactional;
 
 
 import java.util.List;
@@ -19,7 +16,6 @@ import java.util.concurrent.LinkedBlockingQueue;
 
 @Component
 public class QueryJobDispatcher {
-    private final QueryRepository queryRepository;
     private final QueryJobRepository jobRepo;
     private final JobExecutionService executor;
 
@@ -27,10 +23,9 @@ public class QueryJobDispatcher {
     private volatile boolean running = true;
     private Thread consumer;
 
-    public QueryJobDispatcher(QueryJobRepository jobRepo, JobExecutionService executor,QueryRepository queryRepository) {
+    public QueryJobDispatcher(QueryJobRepository jobRepo, JobExecutionService executor) {
         this.jobRepo = jobRepo;
         this.executor = executor;
-        this.queryRepository=queryRepository;
     }
 
     @PostConstruct
@@ -50,10 +45,8 @@ public class QueryJobDispatcher {
     @PreDestroy
     public void stop() throws InterruptedException {
         running = false;
-        if (consumer != null) {
-            consumer.interrupt();
-            consumer.join(2000);
-        }
+        consumer.interrupt();
+        consumer.join(2000);
     }
 
     private void consumeLoop() {
