@@ -64,7 +64,7 @@ Queries are persisted in MySQL and cached in an in-memory `ConcurrentHashMap` fo
    ```sql
     CREATE USER 'user'@'localhost' IDENTIFIED BY 'analytic';
    ```
-6. make sure to grant this account full privilege on query table and query_job table , but only read right on the Passengers table :
+5. make sure to grant this account full privilege on query table and query_job table , but only read right on the Passengers table :
    ```sql
    -- Full privileges on query and query_job tables
     GRANT ALL PRIVILEGES ON analytics.query TO 'user'@'localhost';
@@ -75,3 +75,8 @@ Queries are persisted in MySQL and cached in an in-memory `ConcurrentHashMap` fo
 
     FLUSH PRIVILEGES;
    ```
+6. either run the app through terminal using
+      ```bash
+      ./mvnw spring-boot:run
+      ```
+      for bash-based shells or just use your IDE
