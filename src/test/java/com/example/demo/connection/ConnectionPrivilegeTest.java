@@ -21,7 +21,7 @@ class ConnectionPrivilegeTest {
     void testSelectOnPassengersShouldSucceed() {
         Integer count = jdbcTemplate.queryForObject("SELECT COUNT(*) FROM passengers", Integer.class);
         assertNotNull(count, "SELECT query should return a count");
-        System.out.println("✅ SELECT on passengers succeeded, count=" + count);
+        System.out.println("SELECT on passengers succeeded, count=" + count);
     }
 
     @Test
@@ -29,7 +29,7 @@ class ConnectionPrivilegeTest {
         DataAccessException ex = assertThrows(DataAccessException.class, () -> {
             jdbcTemplate.update("UPDATE passengers SET Name = 'X' WHERE passengerId=1");
         }, "UPDATE should not be allowed for passengers table");
-        System.out.println("✅ UPDATE on passengers failed as expected: " + ex.getMessage());
+        System.out.println("UPDATE on passengers failed as expected: " + ex.getMessage());
     }
 
     @Test
@@ -45,7 +45,7 @@ class ConnectionPrivilegeTest {
                 queryText
         );
         assertNotNull(queryId, "Query should have been inserted successfully");
-        System.out.println("✅ Inserted query with id=" + queryId);
+        System.out.println("Inserted query with id=" + queryId);
 
         // 2. Insert a query_job referencing that query
         String status = "RUNNING";
@@ -61,7 +61,7 @@ class ConnectionPrivilegeTest {
                 queryId
         );
         assertNotNull(jobId, "QueryJob should have been inserted successfully");
-        System.out.println("✅ Inserted query_job with id=" + jobId + " for query " + queryId);
+        System.out.println("Inserted query_job with id=" + jobId + " for query " + queryId);
 
         // 3. SELECT both tables
         Integer jobCount = jdbcTemplate.queryForObject("SELECT COUNT(*) FROM query_job", Integer.class);
