@@ -2,20 +2,17 @@ package com.example.demo.service;
 
 import com.example.demo.entity.Query;
 import com.example.demo.repository.QueryRepository;
-import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
 import java.util.List;
 
 @Service
 public class QueryService {
 
     private final QueryRepository repository;
-    private final JdbcTemplate jdbcTemplate;
-    public QueryService(QueryRepository repository, JdbcTemplate jdbcTemplate) {
+
+    public QueryService(QueryRepository repository) {
         this.repository = repository;
-        this.jdbcTemplate=jdbcTemplate;
     }
 
     public Query saveQuery(String text) {

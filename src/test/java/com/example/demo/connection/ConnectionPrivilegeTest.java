@@ -48,7 +48,7 @@ class ConnectionPrivilegeTest {
         System.out.println("✅ Inserted query with id=" + queryId);
 
         // 2️⃣ Insert a query_job referencing that query
-        String status = "QUEUED";
+        String status = "RUNNING";
         jdbcTemplate.update(
                 "INSERT INTO query_job (query_id, status, error) VALUES (?, ?, ?)",
                 queryId, status, null

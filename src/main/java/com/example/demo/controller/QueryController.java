@@ -53,7 +53,7 @@ public class QueryController {
     @PostMapping("/execute")
     public Map<String, Object> executeQuery(@RequestParam("queryId") Long queryId) {
         long jobId = jobSubmitter.submit(queryId);
-        return Map.of("jobId", jobId, "status", "QUEUED");
+        return Map.of("jobId", jobId, "status", "RUNNING");
     }
 
     // ---------- 4️⃣ Check job status or result ----------
@@ -74,7 +74,7 @@ public class QueryController {
             case FAILED -> {
                 response.put("error", job.getError());
             }
-            case QUEUED, RUNNING -> {
+            case RUNNING -> {
                 response.put("message", "Job still processing, please retry later.");
             }
         }

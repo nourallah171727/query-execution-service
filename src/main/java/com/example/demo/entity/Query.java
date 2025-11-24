@@ -1,8 +1,8 @@
 package com.example.demo.entity;
 
 import jakarta.persistence.*;
-@Table(name = "query")
 @Entity
+@Table(name = "query")
 public class Query {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

@@ -36,51 +36,44 @@ public class JobExecutionService {
         // 1) load job
         QueryJob job = jobRepo.findById(jobId).orElse(null);
 
-        if(job==null || job.getStatus()!=QueryJobStatus.QUEUED){
+        if(job==null){
             return;
         }
 
         long queryId = job.getQueryId();
 
         try {
-            //2) mark job as running
-            markRunning(job);
-            // 3) cache short-circuit
+            // 2) cache short-circuit
             if (cache.contains(queryId)) {
                 markSucceeded(job);
                 return;
             }
 
-            // 4) get SQL text
+            // 3) get SQL text
             String sql = queryRepo.findSqlById(queryId);
 
-            // 5) run SQL (serialize result to JSON-ish)
+            // 4) run SQL (serialize result to JSON-ish)
             List<Map<String, Object>> rows = jdbc.queryForList(sql);
             String json = com.fasterxml.jackson.databind.json.JsonMapper.builder()
                     .build().writeValueAsString(rows);
 
-            // 6) cache + mark success
+            // 5) cache + mark success
             cache.put(queryId, json);
             markSucceeded(job);
         } catch (Exception e) {
             markFailed(job, e.getMessage());
         }
     }
-
+    //mark a job as a success in the db
     protected void markSucceeded(QueryJob job) {
         job.setStatus(QueryJobStatus.SUCCEEDED);
         job.setError(null);
         jobRepo.save(job);
     }
-
+    //mark a job as a failure in the db
     protected void markFailed(QueryJob job, String message) {
         job.setStatus(QueryJobStatus.FAILED);
         job.setError(message);
-        jobRepo.save(job);
-    }
-    protected void markRunning(QueryJob job){
-        job.setStatus(QueryJobStatus.RUNNING);
-        job.setError(null);
         jobRepo.save(job);
     }
 }

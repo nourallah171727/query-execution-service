@@ -37,7 +37,7 @@ public class TestHelper {
         List<QueryJob> jobs = new ArrayList<>();
         for (int i = 1; i <= count; i++) {
             String text = "SELECT * FROM passengers WHERE PassengerId = " + i;
-            QueryJob job = createQueryWithJob(text, QueryJobStatus.QUEUED);
+            QueryJob job = createQueryWithJob(text, QueryJobStatus.RUNNING);
             jobs.add(job);
         }
         return jobs;

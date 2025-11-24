@@ -61,7 +61,7 @@ class JobExecutionServiceTest {
 
     @Test
     void shouldExecuteJobAsyncWithCacheMiss() throws Exception {
-        QueryJob job = helper.createQueryWithJob("SELECT 1 as result", QueryJobStatus.QUEUED);
+        QueryJob job = helper.createQueryWithJob("SELECT 1 as result", QueryJobStatus.RUNNING);
         long jobId = job.getId();
         long queryId = job.getQueryId();
 
@@ -78,7 +78,7 @@ class JobExecutionServiceTest {
 
     @Test
     void shouldUseCacheAndSkipExecution() throws Exception {
-        QueryJob job = helper.createQueryWithJob("SELECT 1 as result", QueryJobStatus.QUEUED);
+        QueryJob job = helper.createQueryWithJob("SELECT 1 as result", QueryJobStatus.RUNNING);
         long jobId = job.getId();
         long queryId = job.getQueryId();
 
@@ -94,7 +94,7 @@ class JobExecutionServiceTest {
 
     @Test
     void shouldMarkFailedWhenQueryCorrupt() throws Exception {
-        QueryJob job = helper.createQueryWithJob("SELEC BAD SQL", QueryJobStatus.QUEUED);
+        QueryJob job = helper.createQueryWithJob("SELEC BAD SQL", QueryJobStatus.RUNNING);
         long jobId = job.getId();
 
         jobService.executeJobAsync(jobId);

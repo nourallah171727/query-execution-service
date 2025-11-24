@@ -14,12 +14,4 @@ import java.util.List;
 @Repository
 public interface QueryJobRepository extends JpaRepository<QueryJob, Long> {
     List<QueryJob> findByStatusIn(Collection<QueryJobStatus> statuses);
-
-    long countByStatus(QueryJobStatus status);
-
-    // Recovery helper: RUNNING -> QUEUED
-    @Modifying
-    @Transactional
-    @Query("UPDATE QueryJob q SET q.status = 'QUEUED' WHERE q.status = 'RUNNING'")
-    int resetRunningToQueued();
 }
