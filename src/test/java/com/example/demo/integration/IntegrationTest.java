@@ -1,4 +1,4 @@
-package com.example.demo.controllerIntegrational;
+package com.example.demo.integration;
 
 import com.example.demo.entity.Query;
 import com.example.demo.entity.QueryJob;
@@ -18,9 +18,9 @@ import java.util.List;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.*;
-//a true integrational end to end test!
+//a true integration E2E test!
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-class QueryControllerIntegrationTest {
+class IntegrationTest {
 
     @LocalServerPort
     private int port;
@@ -40,7 +40,7 @@ class QueryControllerIntegrationTest {
         queryRepo.deleteAll();
     }
 
-    // ---------- 1️⃣ POST /queries ----------
+    // ---------- 1. POST /queries ----------
     @Test
     void addQuery_shouldPersistQuery() {
         String sql = "SELECT 1 AS result";
@@ -54,7 +54,7 @@ class QueryControllerIntegrationTest {
         assertTrue(queryRepo.existsById(id));
     }
 
-    // ---------- 2️⃣ GET /queries ----------
+    // ---------- 2. GET /queries ----------
     @Test
     void listQueries_shouldReturnAllSavedQueries() {
         queryRepo.save(new Query("SELECT 1"));
@@ -67,7 +67,7 @@ class QueryControllerIntegrationTest {
         assertTrue(response.getBody().size() >= 2);
     }
 
-    // ---------- 3️⃣ POST /queries/execute ----------
+    // ---------- 3. POST /queries/execute ----------
     @Test
     void executeQuery_shouldCreateJobAndReturnJobId() {
         // Create query first
@@ -83,37 +83,50 @@ class QueryControllerIntegrationTest {
         assertTrue(body.containsKey("jobId"));
 
         long jobId = ((Number) body.get("jobId")).longValue();
-        QueryJob job = jobRepo.findById(jobId).orElseThrow();
+        QueryJob job = jobRepo.findById(jobId).orElse(null);
+        assertNotNull(job);
+
 
     }
 
-    // ---------- 4️⃣ GET /queries/job/{id} ----------
+    // ---------- 4. GET /queries/job/{id} ----------
     @Test
     void getJob_shouldReturnStatusAndResultEventually() throws Exception {
-        // Create and submit a valid query
+        // 1. Create and store a simple query
         Query q = queryRepo.save(new Query("SELECT 1 AS result"));
-        String executeUrl = baseUrl() + "/execute?queryId=" + q.getId();
-        long jobId = ((Number) rest.postForEntity(executeUrl, null, Map.class)
-                .getBody().get("jobId")).longValue();
 
-        // Wait a bit for async job to complete
+        // 2. Submit job
+        String executeUrl = baseUrl() + "/execute?queryId=" + q.getId();
+        Map<String, Object> execResponse = rest.postForEntity(executeUrl, null, Map.class).getBody();
+        assertNotNull(execResponse);
+
+        long jobId = ((Number) execResponse.get("jobId")).longValue();
+
+        // 3. Wait for async execution to finish
         Thread.sleep(1000);
 
-        // Check job status endpoint
+        // 4. GET job result
         String statusUrl = baseUrl() + "/job/" + jobId;
         ResponseEntity<Map> response = rest.getForEntity(statusUrl, Map.class);
 
         assertEquals(HttpStatus.OK, response.getStatusCode());
         Map body = response.getBody();
         assertNotNull(body);
+
+        // Basic fields
         assertEquals(jobId, ((Number) body.get("jobId")).longValue());
         assertTrue(body.containsKey("status"));
+        assertEquals("SUCCEEDED", body.get("status"));
 
-        String status = body.get("status").toString();
-        assertTrue(List.of("SUCCEEDED", "RUNNING", "QUEUED").contains(status));
+        // 5. Validate presence of the result
+        assertTrue(body.containsKey("result"), "Response should contain 'result' when job succeeded");
+
+        Object result = body.get("result");
+        assertNotNull(result, "Result should not be null");
+        assertTrue(result.toString().contains("1"), "Result should contain SQL return value");
     }
 
-    // ---------- 5️⃣ Invalid query handling ----------
+    // ---------- 6. Invalid query handling ----------
     @Test
     void invalidQuery_shouldResultInFailedJob() throws Exception {
         Query q = queryRepo.save(new Query("SELEC BAD SQL")); // invalid intentionally

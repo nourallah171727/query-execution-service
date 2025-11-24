@@ -33,6 +33,8 @@ public class JobExecutionService {
 
     @Async("queryExecutor")
     public void executeJobAsync(long jobId) {
+        System.out.println("Async thread executing job " + jobId +
+                " on thread: " + Thread.currentThread().getName());
         // 1) load job
         QueryJob job = jobRepo.findById(jobId).orElse(null);
 

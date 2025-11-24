@@ -34,7 +34,7 @@ class ConnectionPrivilegeTest {
 
     @Test
     void testInsertSelectAndUpdateOnQueryAndQueryJobTables() {
-        // 1️⃣ Insert a new query entry
+        // 1. Insert a new query entry
         String queryText = "SELECT * FROM passengers";
         jdbcTemplate.update("INSERT INTO query (text) VALUES (?)", queryText);
 
@@ -47,7 +47,7 @@ class ConnectionPrivilegeTest {
         assertNotNull(queryId, "Query should have been inserted successfully");
         System.out.println("✅ Inserted query with id=" + queryId);
 
-        // 2️⃣ Insert a query_job referencing that query
+        // 2. Insert a query_job referencing that query
         String status = "RUNNING";
         jdbcTemplate.update(
                 "INSERT INTO query_job (query_id, status, error) VALUES (?, ?, ?)",
@@ -63,7 +63,7 @@ class ConnectionPrivilegeTest {
         assertNotNull(jobId, "QueryJob should have been inserted successfully");
         System.out.println("✅ Inserted query_job with id=" + jobId + " for query " + queryId);
 
-        // 3️⃣ SELECT both tables
+        // 3. SELECT both tables
         Integer jobCount = jdbcTemplate.queryForObject("SELECT COUNT(*) FROM query_job", Integer.class);
         Integer queryCount = jdbcTemplate.queryForObject("SELECT COUNT(*) FROM query", Integer.class);
 
@@ -72,7 +72,7 @@ class ConnectionPrivilegeTest {
 
         System.out.printf("✅ query_job count=%d, query count=%d%n", jobCount, queryCount);
 
-        // 4️⃣ UPDATE tests (should succeed if privileges allow)
+        // 4. UPDATE tests (should succeed if privileges allow)
         int affectedJobRows = jdbcTemplate.update("UPDATE query_job SET status = status WHERE id = ?", jobId);
         int affectedQueryRows = jdbcTemplate.update("UPDATE query SET text = text WHERE id = ?", queryId);
 

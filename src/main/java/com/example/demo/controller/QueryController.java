@@ -32,14 +32,14 @@ public class QueryController {
         this.cache = cache;
     }
 
-    // ---------- 1️⃣ Add new query ----------
+    // ---------- 1. Add new query ----------
     @PostMapping
     public Map<String, Object> addQuery(@RequestBody String queryText) {
         Query q = queryService.saveQuery(queryText);
         return Map.of("id", q.getId(), "query", q.getText());
     }
 
-    // ---------- 2️⃣ List all queries ----------
+    // ---------- 2. List all queries ----------
     @GetMapping
     public List<Map<String, Object>> listQueries() {
         List<Map<String, Object>> result = new ArrayList<>();
@@ -49,14 +49,14 @@ public class QueryController {
         return result;
     }
 
-    // ---------- 3️⃣ Submit a query job ----------
+    // ---------- 3. Submit a query job ----------
     @PostMapping("/execute")
     public Map<String, Object> executeQuery(@RequestParam("queryId") Long queryId) {
         long jobId = jobSubmitter.submit(queryId);
         return Map.of("jobId", jobId, "status", "RUNNING");
     }
 
-    // ---------- 4️⃣ Check job status or result ----------
+    // ---------- 4. Check job status or result ----------
     @GetMapping("/job/{id}")
     public Map<String, Object> getJobResult(@PathVariable("id") Long jobId) {
         QueryJob job = jobRepo.findById(jobId)

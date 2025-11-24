@@ -68,12 +68,11 @@ class JobExecutionServiceTest {
         cache.clear(); // ensure miss
         jobService.executeJobAsync(jobId);
 
-        awaitJobCompletion(jobId, 3000);
+        awaitJobCompletion(jobId, 1000);
 
         QueryJob updated = jobRepo.findById(jobId).orElseThrow();
         assertEquals(QueryJobStatus.SUCCEEDED, updated.getStatus());
         assertTrue(cache.contains(queryId), "Result should be cached");
-
     }
 
     @Test
@@ -85,7 +84,7 @@ class JobExecutionServiceTest {
         cache.put(queryId, "[{\"result\":1}]"); // prepopulate cache
         jobService.executeJobAsync(jobId);
 
-        awaitJobCompletion(jobId, 3000);
+        awaitJobCompletion(jobId, 1000);
 
         QueryJob updated = jobRepo.findById(jobId).orElseThrow();
         assertEquals(QueryJobStatus.SUCCEEDED, updated.getStatus());
@@ -104,6 +103,4 @@ class JobExecutionServiceTest {
         assertEquals(QueryJobStatus.FAILED, updated.getStatus());
         assertNotNull(updated.getError());
     }
-
-
 }
