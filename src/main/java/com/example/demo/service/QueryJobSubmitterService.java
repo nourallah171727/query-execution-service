@@ -3,21 +3,39 @@ package com.example.demo.service;
 import com.example.demo.entity.QueryJob;
 import com.example.demo.entity.enums.QueryJobStatus;
 import com.example.demo.repository.QueryJobRepository;
+import com.example.demo.repository.QueryRepository;
 import org.springframework.stereotype.Service;
 @Service
 public class QueryJobSubmitterService {
 
-        private final QueryJobRepository jobRepo;
-        private final JobExecutionService jobExecutionService;
+    private final QueryJobRepository jobRepo;
+    private final JobExecutionService jobExecutionService;
+    private final QueryRepository queryRepo;
+    private final QuerySecurityService querySecurity;
 
-        public QueryJobSubmitterService(QueryJobRepository jobRepo, JobExecutionService jobExecutionService) {
-            this.jobRepo = jobRepo;
-            this.jobExecutionService = jobExecutionService;
-        }
-        //stores the Job in db and immediately starts a thread for execution
-        public long submit(long queryId) {
-            QueryJob job = new QueryJob(queryId, QueryJobStatus.RUNNING);
-            job = jobRepo.save(job);
-            jobExecutionService.executeJobAsync(job.getId());
-            return job.getId();}
+    public QueryJobSubmitterService(QueryJobRepository jobRepo,
+                                    JobExecutionService jobExecutionService,
+                                    QueryRepository queryRepo,
+                                    QuerySecurityService querySecurity) {
+        this.jobRepo = jobRepo;
+        this.jobExecutionService = jobExecutionService;
+        this.queryRepo = queryRepo;
+        this.querySecurity = querySecurity;
+    }
+
+    public long submit(long queryId) {
+
+        // 1. Load SQL
+        String sql = queryRepo.findSqlById(queryId);
+
+        // 2. Ask the security service to validate permissions
+        querySecurity.enforcePermission(sql);
+
+        // 3. Normal job submission
+        QueryJob job = new QueryJob(queryId, QueryJobStatus.RUNNING);
+        job = jobRepo.save(job);
+        jobExecutionService.executeJobAsync(job.getId());
+
+        return job.getId();
+    }
 }
