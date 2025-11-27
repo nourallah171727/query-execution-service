@@ -1,6 +1,5 @@
 package com.example.demo.integration;
 
-import com.example.demo.config.NoSecurityConfig;
 import com.example.demo.entity.Query;
 import com.example.demo.entity.QueryJob;
 import com.example.demo.entity.enums.QueryJobStatus;
@@ -24,10 +23,6 @@ import static org.junit.jupiter.api.Assertions.*;
 //a true integration E2E test!
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-@Import(NoSecurityConfig.class)
-@ImportAutoConfiguration(exclude = {
-        org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration.class
-})
 class IntegrationTest {
 
     @LocalServerPort
