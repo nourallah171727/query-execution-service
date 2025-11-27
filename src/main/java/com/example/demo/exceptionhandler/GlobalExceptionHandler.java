@@ -25,6 +25,7 @@ public class GlobalExceptionHandler {
     }
     @ExceptionHandler(Exception.class)
     public ResponseEntity<Map<String, Object>> handleGeneric(Exception ex) {
+        System.out.println(ex.getClass());
         return ResponseEntity
                 .status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body(Map.of(

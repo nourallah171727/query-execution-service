@@ -1,11 +1,17 @@
 package com.example.demo.integration;
 
+import com.example.demo.auth.dto.LoginRequest;
+import com.example.demo.auth.dto.LoginResponse;
+import com.example.demo.auth.entity.User;
+import com.example.demo.auth.entity.enums.Role;
+import com.example.demo.auth.repo.UserRepository;
 import com.example.demo.entity.Query;
 import com.example.demo.entity.QueryJob;
 import com.example.demo.entity.enums.QueryJobStatus;
 import com.example.demo.repository.QueryJobRepository;
 import com.example.demo.repository.QueryRepository;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.ImportAutoConfiguration;
@@ -13,8 +19,8 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.context.annotation.Import;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
+import org.springframework.http.*;
+import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.util.List;
 import java.util.Map;
@@ -32,23 +38,65 @@ class IntegrationTest {
     private TestRestTemplate rest;
     @Autowired private QueryRepository queryRepo;
     @Autowired private QueryJobRepository jobRepo;
+    @Autowired private UserRepository userRepo;
+    @Autowired private PasswordEncoder passwordEncoder;
+    private String authToken;
+    private static final String TEST_USERNAME = "integration-user";
+    private static final String TEST_PASSWORD = "integration-password";
+
+
 
     private String baseUrl() {
         return "http://localhost:" + port + "/queries";
+    }
+
+
+    @BeforeEach
+    void setUp() {
+        ensureTestUser();
+        authToken = authenticate();
     }
 
     @AfterEach
     void cleanUp() {
         jobRepo.deleteAll();
         queryRepo.deleteAll();
+        userRepo.deleteAll();
+    }
+
+    private void ensureTestUser() {
+        userRepo.findByUsername(TEST_USERNAME).orElseGet(() ->
+                userRepo.save(new User(TEST_USERNAME, passwordEncoder.encode(TEST_PASSWORD), Role.USER))
+        );
+    }
+    private String authenticate() {
+        String loginUrl = "http://localhost:" + port + "/auth/login";
+        ResponseEntity<LoginResponse> response = rest.postForEntity(
+                loginUrl,
+                new LoginRequest(TEST_USERNAME, TEST_PASSWORD),
+                LoginResponse.class
+        );
+
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertNotNull(response.getBody());
+        return response.getBody().token();
+    }
+
+    private HttpHeaders authHeaders() {
+        HttpHeaders headers = new HttpHeaders();
+        headers.setBearerAuth(authToken);
+        return headers;
     }
 
     // ---------- 1. POST /queries ----------
     @Test
     void addQuery_shouldPersistQuery() {
         String sql = "SELECT 1 AS result";
-        ResponseEntity<Map> response = rest.postForEntity(baseUrl(), sql, Map.class);
+        HttpHeaders headers = authHeaders();
+        headers.setContentType(MediaType.TEXT_PLAIN);
+        HttpEntity<String> entity = new HttpEntity<>(sql, headers);
 
+        ResponseEntity<Map> response = rest.postForEntity(baseUrl(), entity, Map.class);
         assertEquals(HttpStatus.OK, response.getStatusCode());
         assertNotNull(response.getBody());
         assertTrue(response.getBody().containsKey("id"));
@@ -63,8 +111,12 @@ class IntegrationTest {
         queryRepo.save(new Query("SELECT 1"));
         queryRepo.save(new Query("SELECT 2"));
 
-        ResponseEntity<List> response = rest.getForEntity(baseUrl(), List.class);
-
+        ResponseEntity<List> response = rest.exchange(
+                baseUrl(),
+                HttpMethod.GET,
+                new HttpEntity<>(authHeaders()),
+                List.class
+        );
         assertEquals(HttpStatus.OK, response.getStatusCode());
         assertNotNull(response.getBody());
         assertTrue(response.getBody().size() >= 2);
@@ -78,8 +130,12 @@ class IntegrationTest {
 
         // Submit job
         String url = baseUrl() + "/execute?queryId=" + q.getId();
-        ResponseEntity<Map> response = rest.postForEntity(url, null, Map.class);
-
+        ResponseEntity<Map> response = rest.exchange(
+                url,
+                HttpMethod.POST,
+                new HttpEntity<>(authHeaders()),
+                Map.class
+        );
         assertEquals(HttpStatus.OK, response.getStatusCode());
         Map body = response.getBody();
         assertNotNull(body);
@@ -100,7 +156,12 @@ class IntegrationTest {
 
         // 2. Submit job
         String executeUrl = baseUrl() + "/execute?queryId=" + q.getId();
-        Map<String, Object> execResponse = rest.postForEntity(executeUrl, null, Map.class).getBody();
+        Map<String, Object> execResponse = rest.exchange(
+                executeUrl,
+                HttpMethod.POST,
+                new HttpEntity<>(authHeaders()),
+                Map.class
+        ).getBody();
         assertNotNull(execResponse);
 
         long jobId = ((Number) execResponse.get("jobId")).longValue();
@@ -110,7 +171,12 @@ class IntegrationTest {
 
         // 4. GET job result
         String statusUrl = baseUrl() + "/job/" + jobId;
-        ResponseEntity<Map> response = rest.getForEntity(statusUrl, Map.class);
+        ResponseEntity<Map> response = rest.exchange(
+                statusUrl,
+                HttpMethod.GET,
+                new HttpEntity<>(authHeaders()),
+                Map.class
+        );
 
         assertEquals(HttpStatus.OK, response.getStatusCode());
         Map body = response.getBody();
@@ -135,8 +201,12 @@ class IntegrationTest {
         Query q = queryRepo.save(new Query("SELEC BAD SQL")); // invalid intentionally
         String executeUrl = baseUrl() + "/execute?queryId=" + q.getId();
 
-        long jobId = ((Number) rest.postForEntity(executeUrl, null, Map.class)
-                .getBody().get("jobId")).longValue();
+        long jobId = ((Number) rest.exchange(
+                executeUrl,
+                HttpMethod.POST,
+                new HttpEntity<>(authHeaders()),
+                Map.class
+        ).getBody().get("jobId")).longValue();
 
         // Wait long enough for async execution
         Thread.sleep(1500);
