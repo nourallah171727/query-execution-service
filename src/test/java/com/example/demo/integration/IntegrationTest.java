@@ -1,5 +1,6 @@
 package com.example.demo.integration;
 
+import com.example.demo.config.NoSecurityConfig;
 import com.example.demo.entity.Query;
 import com.example.demo.entity.QueryJob;
 import com.example.demo.entity.enums.QueryJobStatus;
@@ -8,9 +9,11 @@ import com.example.demo.repository.QueryRepository;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.autoconfigure.ImportAutoConfiguration;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.boot.test.web.server.LocalServerPort;
+import org.springframework.context.annotation.Import;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 
@@ -19,7 +22,12 @@ import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.*;
 //a true integration E2E test!
+
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@Import(NoSecurityConfig.class)
+@ImportAutoConfiguration(exclude = {
+        org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration.class
+})
 class IntegrationTest {
 
     @LocalServerPort
