@@ -1,6 +1,7 @@
 package com.example.demo.integration;
 
 
+import com.example.demo.auth.dto.CreateUserRequest;
 import com.example.demo.auth.dto.LoginRequest;
 import com.example.demo.auth.dto.LoginResponse;
 import com.example.demo.auth.entity.User;
@@ -49,6 +50,9 @@ class IntegrationTestAdmin {
 
     private String baseUrl() {
         return "http://localhost:" + port + "/queries";
+    }
+    private String adminUsersUrl() {
+        return "http://localhost:" + port + "/admin/users";
     }
 
 
@@ -234,5 +238,24 @@ class IntegrationTestAdmin {
 
         long jobId = ((Number) response.getBody().get("jobId")).longValue();
         assertTrue(jobRepo.findById(jobId).isPresent());
+    }
+    @Test
+    void adminCanCreateUserThroughAdminEndpoint() {
+        HttpHeaders headers = authHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+
+        CreateUserRequest request = new CreateUserRequest("new-admin-user", "password123", Role.USER);
+
+        ResponseEntity<Map> response = rest.postForEntity(
+                adminUsersUrl(),
+                new HttpEntity<>(request, headers),
+                Map.class
+        );
+
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        boolean exists = userRepo.findAll().stream()
+                .anyMatch(u -> u.getUsername().equals("new-admin-user"));
+
+        assertTrue(exists, "Expected a user with the new-admin-user name");
     }
 }

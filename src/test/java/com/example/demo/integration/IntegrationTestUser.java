@@ -1,5 +1,6 @@
 package com.example.demo.integration;
 
+import com.example.demo.auth.dto.CreateUserRequest;
 import com.example.demo.auth.dto.LoginRequest;
 import com.example.demo.auth.dto.LoginResponse;
 import com.example.demo.auth.entity.User;
@@ -46,6 +47,9 @@ class IntegrationTestUser {
 
     private String baseUrl() {
         return "http://localhost:" + port + "/queries";
+    }
+    private String adminUsersUrl() {
+        return "http://localhost:" + port + "/admin/users";
     }
 
 
@@ -229,5 +233,20 @@ class IntegrationTestUser {
         assertNotNull(response.getBody());
         assertEquals("You cannot execute write queries", response.getBody().get("message"));
         assertEquals(0, jobRepo.count());
+    }
+    @Test
+    void userCannotCreateUserThroughAdminEndpoint() {
+        HttpHeaders headers = authHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+
+        CreateUserRequest request = new CreateUserRequest("new-user", "password123", Role.USER);
+
+        ResponseEntity<Map> response = rest.postForEntity(
+                adminUsersUrl(),
+                new HttpEntity<>(request, headers),
+                Map.class
+        );
+
+        assertEquals(HttpStatus.FORBIDDEN, response.getStatusCode());
     }
 }
