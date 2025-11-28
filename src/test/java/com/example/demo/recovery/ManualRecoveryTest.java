@@ -1,4 +1,4 @@
-package com.example.demo.integration;
+package com.example.demo.recovery;
 
 import com.example.demo.DemoApplication;
 import com.example.demo.entity.QueryJob;
