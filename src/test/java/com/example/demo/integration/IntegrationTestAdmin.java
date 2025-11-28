@@ -1,5 +1,6 @@
 package com.example.demo.integration;
 
+
 import com.example.demo.auth.dto.LoginRequest;
 import com.example.demo.auth.dto.LoginResponse;
 import com.example.demo.auth.entity.User;
@@ -29,7 +30,7 @@ import static org.junit.jupiter.api.Assertions.*;
 //a true integration E2E test!
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-class IntegrationTest {
+class IntegrationTestAdmin {
 
     @LocalServerPort
     private int port;
@@ -41,8 +42,8 @@ class IntegrationTest {
     @Autowired private UserRepository userRepo;
     @Autowired private PasswordEncoder passwordEncoder;
     private String authToken;
-    private static final String TEST_USERNAME = "integration-user";
-    private static final String TEST_PASSWORD = "integration-password";
+    private static final String ADMIN_USERNAME = "integration-admin";
+    private static final String ADMIN_PASSWORD = "integration-admin-password";
 
 
 
@@ -65,15 +66,15 @@ class IntegrationTest {
     }
 
     private void ensureTestUser() {
-        userRepo.findByUsername(TEST_USERNAME).orElseGet(() ->
-                userRepo.save(new User(TEST_USERNAME, passwordEncoder.encode(TEST_PASSWORD), Role.USER))
+        userRepo.findByUsername(ADMIN_USERNAME).orElseGet(() ->
+                userRepo.save(new User(ADMIN_USERNAME, passwordEncoder.encode(ADMIN_PASSWORD), Role.ADMIN))
         );
     }
     private String authenticate() {
         String loginUrl = "http://localhost:" + port + "/auth/login";
         ResponseEntity<LoginResponse> response = rest.postForEntity(
                 loginUrl,
-                new LoginRequest(TEST_USERNAME, TEST_PASSWORD),
+                new LoginRequest(ADMIN_USERNAME, ADMIN_PASSWORD),
                 LoginResponse.class
         );
 
@@ -214,5 +215,24 @@ class IntegrationTest {
         QueryJob job = jobRepo.findById(jobId).orElseThrow();
         assertEquals(QueryJobStatus.FAILED, job.getStatus());
         assertNotNull(job.getError());
+    }
+    @Test
+    void adminCanExecuteWriteQuery() {
+        Query writeQuery = queryRepo.save(new Query("INSERT INTO queries(text) VALUES ('admin')"));
+        String executeUrl = baseUrl() + "/execute?queryId=" + writeQuery.getId();
+
+        ResponseEntity<Map> response = rest.exchange(
+                executeUrl,
+                HttpMethod.POST,
+                new HttpEntity<>(authHeaders()),
+                Map.class
+        );
+
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertNotNull(response.getBody());
+        assertTrue(response.getBody().containsKey("jobId"));
+
+        long jobId = ((Number) response.getBody().get("jobId")).longValue();
+        assertTrue(jobRepo.findById(jobId).isPresent());
     }
 }
