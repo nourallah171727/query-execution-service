@@ -3,7 +3,6 @@ package com.example.demo.auth.controller;
 import com.example.demo.auth.dto.CreateUserRequest;
 import com.example.demo.auth.entity.User;
 import com.example.demo.auth.service.AdminUserService;
-import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
