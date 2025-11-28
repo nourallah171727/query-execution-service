@@ -43,6 +43,8 @@ class IntegrationTest {
     private String authToken;
     private static final String TEST_USERNAME = "integration-user";
     private static final String TEST_PASSWORD = "integration-password";
+    private static final String ADMIN_USERNAME = "integration-admin";
+    private static final String ADMIN_PASSWORD = "integration-admin-password";
 
 
 
@@ -53,8 +55,8 @@ class IntegrationTest {
 
     @BeforeEach
     void setUp() {
-        ensureTestUser();
-        authToken = authenticate();
+        ensureUser(TEST_USERNAME, TEST_PASSWORD, Role.USER);
+        authToken = authenticate(TEST_USERNAME, TEST_PASSWORD);
     }
 
     @AfterEach
@@ -64,16 +66,16 @@ class IntegrationTest {
         userRepo.deleteAll();
     }
 
-    private void ensureTestUser() {
-        userRepo.findByUsername(TEST_USERNAME).orElseGet(() ->
-                userRepo.save(new User(TEST_USERNAME, passwordEncoder.encode(TEST_PASSWORD), Role.USER))
+    private void ensureUser(String username, String password, Role role) {
+        userRepo.findByUsername(username).orElseGet(() ->
+                userRepo.save(new User(username, passwordEncoder.encode(password), role))
         );
     }
-    private String authenticate() {
+    private String authenticate(String username, String password) {
         String loginUrl = "http://localhost:" + port + "/auth/login";
         ResponseEntity<LoginResponse> response = rest.postForEntity(
                 loginUrl,
-                new LoginRequest(TEST_USERNAME, TEST_PASSWORD),
+                new LoginRequest(username, password),
                 LoginResponse.class
         );
 
@@ -85,6 +87,12 @@ class IntegrationTest {
     private HttpHeaders authHeaders() {
         HttpHeaders headers = new HttpHeaders();
         headers.setBearerAuth(authToken);
+        return headers;
+    }
+
+    private HttpHeaders authHeaders(String token) {
+        HttpHeaders headers = new HttpHeaders();
+        headers.setBearerAuth(token);
         return headers;
     }
 
@@ -214,5 +222,46 @@ class IntegrationTest {
         QueryJob job = jobRepo.findById(jobId).orElseThrow();
         assertEquals(QueryJobStatus.FAILED, job.getStatus());
         assertNotNull(job.getError());
+    }
+
+    @Test
+    void userCannotExecuteWriteQuery() {
+        Query writeQuery = queryRepo.save(new Query("INSERT INTO queries(text) VALUES ('abc')"));
+        String executeUrl = baseUrl() + "/execute?queryId=" + writeQuery.getId();
+
+        ResponseEntity<Map> response = rest.exchange(
+                executeUrl,
+                HttpMethod.POST,
+                new HttpEntity<>(authHeaders()),
+                Map.class
+        );
+
+        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+        assertNotNull(response.getBody());
+        assertEquals("You cannot execute write queries", response.getBody().get("message"));
+        assertEquals(0, jobRepo.count());
+    }
+
+    @Test
+    void adminCanExecuteWriteQuery() {
+        ensureUser(ADMIN_USERNAME, ADMIN_PASSWORD, Role.ADMIN);
+        String adminToken = authenticate(ADMIN_USERNAME, ADMIN_PASSWORD);
+
+        Query writeQuery = queryRepo.save(new Query("INSERT INTO queries(text) VALUES ('admin')"));
+        String executeUrl = baseUrl() + "/execute?queryId=" + writeQuery.getId();
+
+        ResponseEntity<Map> response = rest.exchange(
+                executeUrl,
+                HttpMethod.POST,
+                new HttpEntity<>(authHeaders(adminToken)),
+                Map.class
+        );
+
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertNotNull(response.getBody());
+        assertTrue(response.getBody().containsKey("jobId"));
+
+        long jobId = ((Number) response.getBody().get("jobId")).longValue();
+        assertTrue(jobRepo.findById(jobId).isPresent());
     }
 }
