@@ -46,7 +46,7 @@ public class JobResultServiceUnitTest {
         Map<String, Object> result = service.getResult(1L);
 
         assertEquals("RUNNING", result.get("status"));
-        assertEquals("Job still processing, please retry later.", result.get("message"));
+        assertEquals("Job still processing.", result.get("message"));
     }
 
     // ---------------------------------------------------------

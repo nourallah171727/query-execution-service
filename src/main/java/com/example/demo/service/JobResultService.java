@@ -38,7 +38,7 @@ public class JobResultService {
 
         switch (job.getStatus()) {
             case RUNNING -> {
-                response.put("message", "Job still processing, please retry later.");
+                response.put("message", "Job still processing.");
             }
 
             case FAILED -> {

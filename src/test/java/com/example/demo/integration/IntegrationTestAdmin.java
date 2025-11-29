@@ -332,7 +332,7 @@ class IntegrationTestAdmin {
         // 4. Validate RUNNING state
         assertEquals(jobId, ((Number) body.get("jobId")).longValue());
         assertEquals("RUNNING", body.get("status"));
-        assertEquals("Job still processing, please retry later.", body.get("message"));
+        assertEquals("Job still processing.", body.get("message"));
 
         System.out.println("Job is still running: " + body);
     }
