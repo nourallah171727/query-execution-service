@@ -296,8 +296,94 @@ class IntegrationTestAdmin {
 
         System.out.println("Write query job result = " + result);
     }
+    // ---------- 7. GET /queries/job/{id} (RUNNING job state) ----------
+    //this test may sometimes execute the query fast enough , that it has an already SUCCEEDED state when it's being checked
+    @Test
+    void getJob_shouldReturnRunningStatusImmediatelyAfterSubmission() {
+        // 1. Store a simple, fast query (fast is good—we WANT to hit the running window)
+        Query q = queryRepo.save(new Query("SELECT * FROM passengers WHERE PassengerId = 1"));
 
-    // ---------- 7. POST /admin/users ----------
+        // 2. Submit job
+        String executeUrl = baseUrl() + "/execute?queryId=" + q.getId();
+        Map<String, Object> execResponse = rest.exchange(
+                executeUrl,
+                HttpMethod.POST,
+                new HttpEntity<>(authHeaders()),
+                Map.class
+        ).getBody();
+
+        assertNotNull(execResponse);
+        long jobId = ((Number) execResponse.get("jobId")).longValue();
+
+        // 3. Immediately query the job state (no sleep!)
+        String statusUrl = baseUrl() + "/job/" + jobId;
+        ResponseEntity<Map> response = rest.exchange(
+                statusUrl,
+                HttpMethod.GET,
+                new HttpEntity<>(authHeaders()),
+                Map.class
+        );
+
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+
+        Map body = response.getBody();
+        assertNotNull(body);
+
+        // 4. Validate RUNNING state
+        assertEquals(jobId, ((Number) body.get("jobId")).longValue());
+        assertEquals("RUNNING", body.get("status"));
+        assertEquals("Job still processing, please retry later.", body.get("message"));
+
+        System.out.println("Job is still running: " + body);
+    }
+    // ---------- 8. GET /queries/job/{id} (FAILED job state) ----------
+    @Test
+    void getJob_shouldReturnFailedStatusWhenQueryExecutionFails() throws Exception {
+        // 1. Create a syntactically valid query that references passengers
+        //    but fails at execution time because the column does not exist
+        Query q = queryRepo.save(new Query("SELECT NonExistingColumn FROM passengers"));
+
+        // 2. Submit job
+        String executeUrl = baseUrl() + "/execute?queryId=" + q.getId();
+        Map<String, Object> execResponse = rest.exchange(
+                executeUrl,
+                HttpMethod.POST,
+                new HttpEntity<>(authHeaders()),
+                Map.class
+        ).getBody();
+
+        assertNotNull(execResponse);
+        long jobId = ((Number) execResponse.get("jobId")).longValue();
+
+        // 3. Wait for async execution to finish
+        Thread.sleep(1000);
+
+        // 4. Ask for job result
+        String statusUrl = baseUrl() + "/job/" + jobId;
+        ResponseEntity<Map> response = rest.exchange(
+                statusUrl,
+                HttpMethod.GET,
+                new HttpEntity<>(authHeaders()),
+                Map.class
+        );
+
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+
+        Map body = response.getBody();
+        assertNotNull(body);
+
+        // 5. Verify FAILED state
+        assertEquals(jobId, ((Number) body.get("jobId")).longValue());
+        assertEquals("FAILED", body.get("status"));
+
+        // 6. Verify error message exists
+        assertTrue(body.containsKey("error"));
+        assertNotNull(body.get("error"));
+
+    }
+
+
+    // ---------- 9. POST /admin/users ----------
     @Test
     void adminCanCreateUserThroughAdminEndpoint() {
         HttpHeaders headers = authHeaders();
