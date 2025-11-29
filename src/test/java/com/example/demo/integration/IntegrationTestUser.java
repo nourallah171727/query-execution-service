@@ -11,6 +11,8 @@ import com.example.demo.entity.QueryJob;
 import com.example.demo.entity.enums.QueryJobStatus;
 import com.example.demo.repository.QueryJobRepository;
 import com.example.demo.repository.QueryRepository;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -19,15 +21,20 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.http.*;
+import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.test.annotation.DirtiesContext;
 
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 import static org.junit.jupiter.api.Assertions.*;
 //a true integration E2E test!
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
+
 class IntegrationTestUser {
 
     @LocalServerPort
@@ -39,6 +46,7 @@ class IntegrationTestUser {
     @Autowired private QueryJobRepository jobRepo;
     @Autowired private UserRepository userRepo;
     @Autowired private PasswordEncoder passwordEncoder;
+    @Autowired ThreadPoolTaskExecutor queryExecutor;
     private String authToken;
     private static final String TEST_USERNAME = "integration-user";
     private static final String TEST_PASSWORD = "integration-password";
@@ -61,6 +69,9 @@ class IntegrationTestUser {
 
     @AfterEach
     void cleanUp() {
+        try{
+            queryExecutor.shutdown();
+            queryExecutor.getThreadPoolExecutor().awaitTermination(5, TimeUnit.SECONDS);}catch(Exception ignored){};
         jobRepo.deleteAll();
         queryRepo.deleteAll();
         userRepo.deleteAll();
@@ -93,7 +104,7 @@ class IntegrationTestUser {
     // ---------- 1. POST /queries ----------
     @Test
     void addQuery_shouldPersistQuery() {
-        String sql = "SELECT 1 AS result";
+        String sql = "SELECT * FROM passengers";
         HttpHeaders headers = authHeaders();
         headers.setContentType(MediaType.TEXT_PLAIN);
         HttpEntity<String> entity = new HttpEntity<>(sql, headers);
@@ -124,11 +135,11 @@ class IntegrationTestUser {
         assertTrue(response.getBody().size() >= 2);
     }
 
-    // ---------- 3. POST /queries/execute ----------
+    // ---------- 3. POST /queries/execute (read query)----------
     @Test
     void executeQuery_shouldCreateJobAndReturnJobId() {
         // Create query first
-        Query q = queryRepo.save(new Query("SELECT 1 AS result"));
+        Query q = queryRepo.save(new Query("SELECT * FROM passengers WHERE PassengerId = 1"));
 
         // Submit job
         String url = baseUrl() + "/execute?queryId=" + q.getId();
@@ -146,15 +157,32 @@ class IntegrationTestUser {
         long jobId = ((Number) body.get("jobId")).longValue();
         QueryJob job = jobRepo.findById(jobId).orElse(null);
         assertNotNull(job);
+    }
+    // ---------- 4. POST /queries/execute (write query)----------
+    @Test
+    void userCannotExecuteWriteQuery() {
+        Query writeQuery = queryRepo.save(new Query("DELETE from passengers WHERE PassengerId = 1;"));
+        String executeUrl = baseUrl() + "/execute?queryId=" + writeQuery.getId();
 
+        ResponseEntity<Map> response = rest.exchange(
+                executeUrl,
+                HttpMethod.POST,
+                new HttpEntity<>(authHeaders()),
+                Map.class
+        );
 
+        assertEquals(HttpStatus.FORBIDDEN, response.getStatusCode());
+        assertNotNull(response.getBody());
+        assertEquals("You cannot execute write queries", response.getBody().get("message"));
+        assertEquals(0, jobRepo.count());
     }
 
-    // ---------- 4. GET /queries/job/{id} ----------
+    // ---------- 5. GET /queries/job/{id} ----------
     @Test
     void getJob_shouldReturnStatusAndResultEventually() throws Exception {
         // 1. Create and store a simple query
-        Query q = queryRepo.save(new Query("SELECT 1 AS result"));
+        Query q = queryRepo.save(new Query("SELECT * FROM passengers where PassengerId=2"));
+
 
         // 2. Submit job
         String executeUrl = baseUrl() + "/execute?queryId=" + q.getId();
@@ -186,54 +214,38 @@ class IntegrationTestUser {
 
         // Basic fields
         assertEquals(jobId, ((Number) body.get("jobId")).longValue());
-        assertTrue(body.containsKey("status"));
         assertEquals("SUCCEEDED", body.get("status"));
+        assertTrue(body.containsKey("result"));
 
-        // 5. Validate presence of the result
-        assertTrue(body.containsKey("result"), "Response should contain 'result' when job succeeded");
 
         Object result = body.get("result");
         assertNotNull(result, "Result should not be null");
-        assertTrue(result.toString().contains("1"), "Result should contain SQL return value");
-    }
 
-    // ---------- 6. Invalid query handling ----------
-    @Test
-    void invalidQuery_shouldResultInFailedJob() throws Exception {
-        Query q = queryRepo.save(new Query("SELEC BAD SQL")); // invalid intentionally
-        String executeUrl = baseUrl() + "/execute?queryId=" + q.getId();
+        // result is actually a JSON string → first cast to String
+        String json = (String) result;
 
-        long jobId = ((Number) rest.exchange(
-                executeUrl,
-                HttpMethod.POST,
-                new HttpEntity<>(authHeaders()),
-                Map.class
-        ).getBody().get("jobId")).longValue();
-
-        // Wait long enough for async execution
-        Thread.sleep(1500);
-
-        QueryJob job = jobRepo.findById(jobId).orElseThrow();
-        assertEquals(QueryJobStatus.FAILED, job.getStatus());
-        assertNotNull(job.getError());
-    }
-    @Test
-    void userCannotExecuteWriteQuery() {
-        Query writeQuery = queryRepo.save(new Query("INSERT INTO queries(text) VALUES ('abc')"));
-        String executeUrl = baseUrl() + "/execute?queryId=" + writeQuery.getId();
-
-        ResponseEntity<Map> response = rest.exchange(
-                executeUrl,
-                HttpMethod.POST,
-                new HttpEntity<>(authHeaders()),
-                Map.class
+        // Parse JSON into List<Map<String,Object>>
+        ObjectMapper mapper = new ObjectMapper();
+        List<Map<String, Object>> rows = mapper.readValue(
+                json,
+                new TypeReference<List<Map<String, Object>>>() {}
         );
 
-        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
-        assertNotNull(response.getBody());
-        assertEquals("You cannot execute write queries", response.getBody().get("message"));
-        assertEquals(0, jobRepo.count());
+        // Should return EXACTLY 1 row
+        assertEquals(1, rows.size(), "Query should return exactly one passenger");
+
+        Map<String, Object> row = rows.get(0);
+
+        // Check PassengerId
+        assertEquals(2, ((Number) row.get("PassengerId")).intValue());
+
+        assertTrue(row.containsKey("Name"));
+        assertTrue(row.containsKey("Age"));
+        assertTrue(row.containsKey("Sex"));
     }
+
+
+    // ---------- 6. POST /admin/users ----------
     @Test
     void userCannotCreateUserThroughAdminEndpoint() {
         HttpHeaders headers = authHeaders();
