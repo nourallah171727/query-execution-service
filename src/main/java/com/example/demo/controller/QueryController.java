@@ -2,14 +2,13 @@ package com.example.demo.controller;
 
 import com.example.demo.cache.QueryResultCache;
 import com.example.demo.entity.Query;
-import com.example.demo.entity.QueryJob;
 import com.example.demo.repository.QueryJobRepository;
+import com.example.demo.service.JobResultService;
 import com.example.demo.service.QueryJobSubmitterService;
 import com.example.demo.service.QueryService;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -21,15 +20,18 @@ public class QueryController {
     private final QueryJobSubmitterService jobSubmitter;
     private final QueryJobRepository jobRepo;
     private final QueryResultCache cache;
+    private final JobResultService jobResultService;
 
     public QueryController(QueryService queryService,
                            QueryJobSubmitterService jobSubmitter,
                            QueryJobRepository jobRepo,
-                           QueryResultCache cache) {
+                           QueryResultCache cache,
+                           JobResultService jobResultService) {
         this.queryService = queryService;
         this.jobSubmitter = jobSubmitter;
         this.jobRepo = jobRepo;
         this.cache = cache;
+        this.jobResultService=jobResultService;
     }
 
     // ---------- 1. Add new query ----------
@@ -59,25 +61,6 @@ public class QueryController {
     // ---------- 4. Check job status or result ----------
     @GetMapping("/job/{id}")
     public Map<String, Object> getJobResult(@PathVariable("id") Long jobId) {
-        QueryJob job = jobRepo.findById(jobId)
-                .orElseThrow(() -> new IllegalArgumentException("No job found with ID " + jobId));
-
-        Map<String, Object> response = new HashMap<>();
-        response.put("jobId", jobId);
-        response.put("status", job.getStatus());
-
-        switch (job.getStatus()) {
-            case SUCCEEDED -> {
-                String result = cache.get(job.getQueryId());
-                response.put("result", result != null ? result : "(cached result expired)");
-            }
-            case FAILED -> {
-                response.put("error", job.getError());
-            }
-            case RUNNING -> {
-                response.put("message", "Job still processing, please retry later.");
-            }
-        }
-        return response;
+        return jobResultService.getResult(jobId);
     }
 }

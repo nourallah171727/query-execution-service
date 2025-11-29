@@ -182,7 +182,7 @@ class IntegrationTestAdmin {
         assertTrue(jobRepo.findById(jobId).isPresent());
     }
 
-    // ---------- 5. GET /queries/job/{id} ----------
+    // ---------- 5. GET /queries/job/{id} (read query) ----------
     @Test
     void getJob_shouldReturnStatusAndResultEventually() throws Exception {
         // 1. Create and store a simple query
@@ -248,8 +248,56 @@ class IntegrationTestAdmin {
         assertTrue(row.containsKey("Age"));
         assertTrue(row.containsKey("Sex"));
     }
+    // ---------- 6. GET /queries/job/{id} (write query) ----------
+    @Test
+    void getJob_writeQueryShouldReturnWriteResultMessage() throws Exception {
+        // 1. Create and store a write query
+        Query q = queryRepo.save(
+                new Query("UPDATE passengers SET Age = Age + 1 WHERE PassengerId = 1")
+        );
 
-    // ---------- 6. POST /admin/users ----------
+        // 2. Submit job
+        String executeUrl = baseUrl() + "/execute?queryId=" + q.getId();
+
+        Map<String, Object> execResponse = rest.exchange(
+                executeUrl,
+                HttpMethod.POST,
+                new HttpEntity<>(authHeaders()),
+                Map.class
+        ).getBody();
+
+        assertNotNull(execResponse);
+        long jobId = ((Number) execResponse.get("jobId")).longValue();
+
+        // 3. Wait for async execution to finish
+        Thread.sleep(1000);
+
+        // 4. Fetch job result
+        String statusUrl = baseUrl() + "/job/" + jobId;
+        ResponseEntity<Map> response = rest.exchange(
+                statusUrl,
+                HttpMethod.GET,
+                new HttpEntity<>(authHeaders()),
+                Map.class
+        );
+
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        Map body = response.getBody();
+        assertNotNull(body);
+
+        // Basic fields
+        assertEquals(jobId, ((Number) body.get("jobId")).longValue());
+        assertEquals("SUCCEEDED", body.get("status"));
+        assertTrue(body.containsKey("result"));
+
+        // 5. Validate write result message
+        Object result = body.get("result");
+        assertEquals("Dataset updated successfully!", result);
+
+        System.out.println("Write query job result = " + result);
+    }
+
+    // ---------- 7. POST /admin/users ----------
     @Test
     void adminCanCreateUserThroughAdminEndpoint() {
         HttpHeaders headers = authHeaders();
