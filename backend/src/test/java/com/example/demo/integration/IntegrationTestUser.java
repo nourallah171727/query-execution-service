@@ -8,7 +8,6 @@ import com.example.demo.auth.entity.enums.Role;
 import com.example.demo.auth.repo.UserRepository;
 import com.example.demo.entity.Query;
 import com.example.demo.entity.QueryJob;
-import com.example.demo.entity.enums.QueryJobStatus;
 import com.example.demo.repository.QueryJobRepository;
 import com.example.demo.repository.QueryRepository;
 import com.fasterxml.jackson.core.type.TypeReference;

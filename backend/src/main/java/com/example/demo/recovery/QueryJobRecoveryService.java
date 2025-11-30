@@ -6,14 +6,10 @@ import com.example.demo.entity.enums.QueryJobStatus;
 import com.example.demo.repository.QueryJobRepository;
 import com.example.demo.service.JobExecutionService;
 import jakarta.annotation.PostConstruct;
-import jakarta.annotation.PreDestroy;
 import org.springframework.stereotype.Component;
 
 
-import java.util.Collection;
 import java.util.List;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.LinkedBlockingQueue;
 
 @Component
 public class QueryJobRecoveryService {
