@@ -165,13 +165,38 @@
     /* ---------------------------------------------------
      * Query Workspace
      * --------------------------------------------------- */
+    const JobItem = ({ job, token, onUpdate, onUnauthorized }) => {
+        const handleJobUpdate = React.useCallback((data) => {
+            onUpdate(job.id, data);
+        }, [job.id, onUpdate]);
+
+        usePollingJob(token, job.id, handleJobUpdate, onUnauthorized);
+
+        return (
+            <div className="card stack">
+                <div className="status-line">
+                    <div>
+                        <div className="muted">Job #{job.id}</div>
+                        <div>{job.message || job.result || job.error || ""}</div>
+                    </div>
+
+                    {job.status === "RUNNING" && <span className="pill info">Running...</span>}
+                    {job.status === "SUCCEEDED" && <span className="pill success">Succeeded</span>}
+                    {job.status === "FAILED" && <span className="pill error">Failed</span>}
+                </div>
+
+                {job.error && <div className="pill error">{job.error}</div>}
+                {job.result && <div className="panel">{job.result}</div>}
+            </div>
+        );
+    };
+
     function QueryWorkspace({ token, role, onUnauthorized }) {
         const [queries, setQueries] = React.useState([]);
         const [newQuery, setNewQuery] = React.useState("");
         const [createError, setCreateError] = React.useState(null);
         const [executeTarget, setExecuteTarget] = React.useState("");
-        const [jobId, setJobId] = React.useState(null);
-        const [jobState, setJobState] = React.useState(null);
+        const [jobs, setJobs] = React.useState([]);
         const [userMsg, setUserMsg] = React.useState(null);
 
         const fetchQueries = React.useCallback(async () => {
@@ -232,7 +257,8 @@
             if (!executeTarget) return;
 
             setUserMsg(null);
-            setJobState({ status: "RUNNING", message: "Submitting job..." });
+            const pendingJob = { id: null, status: "RUNNING", message: "Submitting job..." };
+            setJobs(prev => [...prev, pendingJob]);
 
             try {
                 const res = await fetch(`${API_BASE}/queries/execute?queryId=${executeTarget}`, {
@@ -248,18 +274,28 @@
                 const data = await res.json();
                 if (!res.ok) throw new Error(data.message || data.error || "Failed to execute");
 
-                setJobId(data.jobId);
-                setJobState({ status: data.status, message: "Job submitted." });
+                setJobs(prev => prev.map(job => job === pendingJob ? { ...job, id: data.jobId, status: data.status, message: "Job submitted." } : job));
 
             } catch (err) {
-                setJobId(null);
-                setJobState({ status: "FAILED", error: err.message });
+                setJobs(prev => prev.map(job => job === pendingJob ? { ...job, status: "FAILED", error: err.message } : job));
                 setUserMsg({ type: "error", text: err.message });
             }
         };
 
-        const handleJobUpdate = React.useCallback((data) => {
-            setJobState(data);
+        const handleJobUpdate = React.useCallback((jobId, data) => {
+            setJobs(prev => prev.map(job => {
+                if (job.id !== jobId) return job;
+
+                const next = { ...job, ...data };
+
+                if (data.status && data.status !== "RUNNING") {
+                    next.message = data.message || (data.status === "SUCCEEDED" ? "Job completed." : "Job failed.");
+                } else if (data.message) {
+                    next.message = data.message;
+                }
+
+                return next;
+            }));
 
             if (data.status && data.status !== "RUNNING") {
                 setUserMsg({
@@ -268,8 +304,6 @@
                 });
             }
         }, []);
-
-        usePollingJob(token, jobId, handleJobUpdate, onUnauthorized);
 
         return (
             <div className="stack">
@@ -318,24 +352,36 @@
                             ))}
                         </select>
                         <button onClick={executeQuery} disabled={!executeTarget}>Run query</button>
-
-                        <div className="divider"></div>
-
-                        <div className="status-line">
-                            <div>
-                                <div className="muted">Job status</div>
-                                <div>{jobId ? `Job #${jobId}` : "No job yet"}</div>
-                            </div>
-
-                            {jobState && jobState.status === "RUNNING" && <span className="pill info">Running...</span>}
-                            {jobState && jobState.status === "SUCCEEDED" && <span className="pill success">Succeeded</span>}
-                            {jobState && jobState.status === "FAILED" && <span className="pill error">Failed</span>}
-                        </div>
-
-                        {jobState && jobState.error && <div className="pill error">{jobState.error}</div>}
-                        {jobState && jobState.result && <div className="panel">{jobState.result}</div>}
-                        {jobState && jobState.message && !jobState.result && <div className="muted">{jobState.message}</div>}
                     </div>
+                </div>
+
+                <div className="card stack">
+                    <div className="status-line">
+                        <div className="muted">Jobs</div>
+                        <div className="pill info">{jobs.length} total</div>
+                    </div>
+
+                    {jobs.length === 0 && <div className="muted">No jobs yet.</div>}
+
+                    {jobs.map((job, idx) => (
+                        job.id ? (
+                            <JobItem
+                                key={job.id}
+                                job={job}
+                                token={token}
+                                onUpdate={handleJobUpdate}
+                                onUnauthorized={onUnauthorized}
+                            />
+                        ) : (
+                            <div className="card stack" key={`pending-${idx}`}>
+                                <div className="status-line">
+                                    <div className="muted">Submitting job...</div>
+                                    {job.status === "FAILED" && <span className="pill error">Failed</span>}
+                                </div>
+                                {job.error && <div className="pill error">{job.error}</div>}
+                            </div>
+                        )
+                    ))}
                 </div>
 
                 {userMsg && (
