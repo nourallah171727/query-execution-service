@@ -46,6 +46,7 @@ public class JobResultService {
             }
 
             case SUCCEEDED -> {
+                response.put("message", "Job completed successfully.");
                 long queryId = job.getQueryId();
                 String sql = queryRepo.findSqlById(queryId);
 
