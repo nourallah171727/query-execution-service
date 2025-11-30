@@ -1,35 +1,96 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
+import React, { useEffect, useState } from "react";
+import LoginForm from "./components/LoginForm.jsx";
+import QueryWorkspace from "./components/QueryWorkspace.jsx";
+import AdminPanel from "./components/AdminPanel.jsx";
+import { API_BASE } from "./utils/api.js";
+import "./App.css";
 
-function App() {
-  const [count, setCount] = useState(0)
-
-  return (
-    <>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.jsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
-  )
+function decodeRole(token) {
+  try {
+    const payload = JSON.parse(atob(token.split(".")[1]));
+    return payload.role || payload.authorities || null;
+  } catch (err) {
+    return null;
+  }
 }
 
-export default App
+function isTokenExpired(token) {
+  try {
+    const payload = JSON.parse(atob(token.split(".")[1]));
+    if (!payload.exp) return false;
+    return payload.exp * 1000 < Date.now();
+  } catch (err) {
+    return false;
+  }
+}
+
+function App() {
+  const [token, setToken] = useState(null);
+  const [role, setRole] = useState(null);
+  const [sessionMessage, setSessionMessage] = useState(null);
+
+  const handleAuth = (newToken) => {
+    setToken(newToken);
+    setRole(decodeRole(newToken));
+    setSessionMessage(null);
+  };
+
+  const logout = () => {
+    setToken(null);
+    setRole(null);
+  };
+
+  const handleUnauthorized = () => {
+    logout();
+    setSessionMessage("Session expired. Please sign in again.");
+  };
+
+  useEffect(() => {
+    if (token && isTokenExpired(token)) {
+      handleUnauthorized();
+    }
+  }, [token]);
+
+  if (!token) {
+    return (
+      <div className="app">
+        <h1>Query Execution Service</h1>
+        {sessionMessage && <div className="pill error">{sessionMessage}</div>}
+        <p className="muted">Sign in to manage and execute queries.</p>
+        <LoginForm onAuthenticated={handleAuth} />
+      </div>
+    );
+  }
+
+  return (
+    <div className="app">
+      <div className="status-line">
+        <div>
+          <h1>Query Execution Service</h1>
+          <div className="role-toggle">
+            Signed in as <strong>{role || "User"}</strong>
+          </div>
+        </div>
+
+        <div className="flex">
+          <button onClick={logout} style={{ background: "#ef4444" }}>
+            Logout
+          </button>
+        </div>
+      </div>
+
+      <QueryWorkspace
+        token={token}
+        role={role}
+        onUnauthorized={handleUnauthorized}
+        API_BASE={API_BASE}
+      />
+
+      {role === "ADMIN" && (
+        <AdminPanel token={token} onUnauthorized={handleUnauthorized} API_BASE={API_BASE} />
+      )}
+    </div>
+  );
+}
+
+export default App;

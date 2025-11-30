@@ -37,7 +37,11 @@ export default function LoginForm({ onAuthenticated }) {
       <form className="stack" onSubmit={submit}>
         <div>
           <label>Username</label>
-          <input value={username} onChange={(e) => setUsername(e.target.value)} />
+          <input
+            value={username}
+            onChange={(e) => setUsername(e.target.value)}
+            required
+          />
         </div>
 
         <div>
@@ -46,12 +50,13 @@ export default function LoginForm({ onAuthenticated }) {
             type="password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
+            required
           />
         </div>
 
         {error && <div className="pill error">{error}</div>}
 
-        <button disabled={loading}>
+        <button type="submit" disabled={loading}>
           {loading ? "Signing in..." : "Login"}
         </button>
       </form>
