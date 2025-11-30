@@ -81,3 +81,19 @@ Queries are persisted in MySQL and cached in an in-memory `ConcurrentHashMap` fo
       ./mvnw spring-boot:run
       ```
       for bash-based shells or just use your IDE
+
+## Frontend development (Vite)
+The React console is now a standalone Vite application under `frontend/` rather than a static page served by Spring Boot.
+
+1. Install dependencies:
+   ```bash
+   cd frontend
+   npm install
+   ```
+2. Start the dev server (proxies API calls to the Spring backend on port 8080 by default):
+   ```bash
+   npm run dev
+   ```
+3. Configure the backend URL for other environments via `VITE_BACKEND_URL` or override allowed origins in Spring with the `app.cors.allowed-origins` property.
+
+Build output lives in `frontend/dist` if you want to host the static assets separately.
