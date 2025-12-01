@@ -1,17 +1,17 @@
-version: '3.9'
 services:
   db:
     image: mysql:8.4
     container_name: analytics-mysql
-    command: ["mysqld", "--default-authentication-plugin=mysql_native_password", "--local-infile=1"]
+    command: ["mysqld", "--local-infile=1"]
     environment:
       MYSQL_ROOT_PASSWORD: rootpassword
       MYSQL_USER: admin
       MYSQL_PASSWORD: analytics
     ports:
-      - "3306:3306"
+      - "3307:3306"
     volumes:
       - ./docker/mysql/init:/docker-entrypoint-initdb.d
+      - ./docker/mysql/conf.d:/etc/mysql/conf.d
     healthcheck:
       test: ["CMD", "mysqladmin", "ping", "-prootpassword"]
       interval: 10s
@@ -29,6 +29,7 @@ services:
       DB_URL: jdbc:mysql://db:3306/analytics
       DB_USERNAME: admin
       DB_PASSWORD: analytics
-      APP_JWT_SECRET: dev-secret-change-me
+      APP_JWT_SECRET: change-me-please-change-me-please-1234567890
+      MYSQL_DATABASE: analytics
     ports:
       - "8080:8080"

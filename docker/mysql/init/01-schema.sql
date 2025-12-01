@@ -3,19 +3,19 @@ CREATE DATABASE IF NOT EXISTS analytics;
 USE analytics;
 
 CREATE TABLE IF NOT EXISTS `passengers` (
-  `PassengerId` int NOT NULL,
-  `Survived` tinyint DEFAULT NULL,
-  `Pclass` int DEFAULT NULL,
-  `Name` varchar(100) DEFAULT NULL,
-  `Sex` varchar(10) DEFAULT NULL,
-  `Age` float DEFAULT NULL,
-  `SibSp` int DEFAULT NULL,
-  `Parch` int DEFAULT NULL,
-  `Ticket` varchar(50) DEFAULT NULL,
-  `Fare` float DEFAULT NULL,
-  `Cabin` varchar(20) DEFAULT NULL,
-  `Embarked` varchar(5) DEFAULT NULL,
-  PRIMARY KEY (`PassengerId`)
+  PassengerId INT NOT NULL,
+    Survived TINYINT,
+    Pclass INT,
+    Name VARCHAR(200),        -- FIXED: was 100, not enough
+    Sex VARCHAR(10),
+    Age FLOAT,
+    SibSp INT,
+    Parch INT,
+    Ticket VARCHAR(50),       -- OK but 50 is safe
+    Fare DECIMAL(10,4),       -- better than FLOAT
+    Cabin VARCHAR(50),        -- FIXED: was 20, too small
+    Embarked VARCHAR(5),
+    PRIMARY KEY (PassengerId)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 CREATE TABLE IF NOT EXISTS `query` (
@@ -44,8 +44,8 @@ CREATE TABLE IF NOT EXISTS `users` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 INSERT INTO `users` (username, password_hash, role) VALUES
-  ('user', '$2a$10$wvZkc.SOWEdOvBrTLO0i4.VRwNyMsvr1D91k2nAQQogpv4sLRa.e.', 'user'),
-  ('admin', '$2a$10$2PqWB9FOGsQ2Pfh0tt8DruaNuR1X4l8u8egsNltZYxHYhH4KZXbca', 'admin')
+  ('user', '$2a$10$wvZkc.SOWEdOvBrTLO0i4.VRwNyMsvr1D91k2nAQQogpv4sLRa.e.', 'USER'),
+  ('admin', '$2a$10$2PqWB9FOGsQ2Pfh0tt8DruaNuR1X4l8u8egsNltZYxHYhH4KZXbca', 'ADMIN')
 ON DUPLICATE KEY UPDATE username = VALUES(username);
 
 -- Create application user and grant privileges
