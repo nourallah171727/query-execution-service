@@ -6,8 +6,7 @@ WORKDIR /app
 
 COPY pom.xml ./
 COPY src ./src
-COPY query-exec-frontend ./query-exec-frontend
-COPY docs ./docs
+
 
 RUN mvn -B clean package -DskipTests
 
