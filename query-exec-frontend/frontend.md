@@ -1,0 +1,2 @@
+this directory represents the frontend code , and the build outputs of the Vite build tool . the output /dist files are directly copied under /src/main/ressources/static/ so that backend serves the compiled Vite files.
+Right now there's still no CI pipeline which automatically pushes Vite built frontend into backend to deliver , I have just manually copied the output files into the already mentioned backend directory

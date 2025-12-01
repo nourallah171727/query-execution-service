@@ -5,6 +5,7 @@ import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
+import jakarta.annotation.PostConstruct;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
@@ -19,9 +20,8 @@ import java.util.function.Function;
 @Service
 public class JwtService {
 
-    @Value("${app.security.jwt-secret:change-me-please-change-me-please-1234567890}")
+    @Value("${app.security.jwt-secret}")
     private String secret;
-
     public String extractUsername(String token) {
         return extractClaim(token, Claims::getSubject);
     }
