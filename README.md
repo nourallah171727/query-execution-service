@@ -77,7 +77,20 @@ Queries are persisted in MySQL and cached in an in-memory `ConcurrentHashMap` fo
     FLUSH PRIVILEGES;
    ```
 6. either run the app through terminal using
-      ```bash
-      ./mvnw spring-boot:run
-      ```
-      for bash-based shells or just use your IDE
+     ```bash
+     ./mvnw spring-boot:run
+     ```
+     for bash-based shells or just use your IDE
+
+### Dockerized setup
+
+1. Build and start the stack (application + MySQL + data seeding):
+   ```bash
+   docker compose up --build
+   ```
+
+2. The `db` service initializes the `analytics` schema, creates the `passengers`, `query`, `query_job`, and `users` tables, provisions the `admin/analytics` account with full privileges, and automatically loads the Titanic dataset from GitHub into the `passengers` table.
+
+3. The database also seeds demo credentials (`user` / `user123` with role `user` and `admin` / `admin123` with role `admin`) in the `users` table for testing.
+
+4. The application runs on port `8080` and connects to MySQL on `db:3306` using the credentials above. Override any settings with environment variables in `docker-compose.yml` as needed.
