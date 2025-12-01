@@ -9,9 +9,6 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 
 import java.util.HashMap;
 import java.util.Map;
-/*this does nothing in the project rn , since we did not provoke any IllegalArgumentException in the main
-request thread , but it's useful to keep maybe when we later add some exceptions
-*/
 @ControllerAdvice
 public class GlobalExceptionHandler {
     @ExceptionHandler(IllegalArgumentException.class)
