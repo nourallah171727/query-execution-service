@@ -53,7 +53,7 @@ The MySQL database is preloaded with the Titanic passengers dataset in a `passen
 
 ## Limitations
 - The frontend keeps tokens in memory and does not use http-only cookies; it is intended as a demo helper UI.
-- The in-memory cache suits a monolith but would not work for multi-server deployments (a shared cache like Redis would be needed).
+- The project uses a ConcurrentHashMap datastructure as the caching layer , which suits a monolith but would not work for multi-server deployments (a shared cache like Redis would be needed).
 - Cache eviction is not yet implemented.
 - Observability is limited.
 - no CI/CD pipelines yet
