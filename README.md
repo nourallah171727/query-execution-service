@@ -51,6 +51,7 @@ The MySQL database is preloaded with the Titanic passengers dataset in a `passen
 - The in-memory cache suits a monolith but would not work for multi-server deployments (a shared cache like Redis would be needed).
 - Cache eviction is not yet implemented.
 - Observability is limited.
+- no CI/CD pipelines yet
 
 ## UI previews
 ### User account
