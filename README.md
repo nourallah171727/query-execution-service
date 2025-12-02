@@ -27,9 +27,13 @@ A simple monolithic app serves Vite-compiled React code directly from the backen
 - MySQL as the persistence layer
 - Docker
 
-## Architecture (Most important java classes)
 ![Architecture overview](docs/images/architecture-flow.png)
-
+- The backend codebase follows an extensible, modular structure with clear separation between controllers, services, repositories, and domain logic. The goal is to keep the system easy to test, maintain, and extend.
+## Testing
+- used a mix of :
+- unit tests : test separate layers while mocking heavy classes like mocking repository to check service's behavior in a light way
+- integration tests: those are tests that truly interact with the database , like RecoveryTest (on App boot , job at RUNNING state get rescheduled for execution)
+- E2E tests: separated into AdminE2E and UserE2E , where full normal flow , invalid queries and permissions are tested
 ## Setup
 1. Install Docker.
 2. Clone the repository.
