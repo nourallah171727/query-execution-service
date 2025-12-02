@@ -19,9 +19,13 @@ A simple monolithic app serves Vite-compiled React code directly from the backen
 **Key entities**
 - `query(id, text)`
 - `query_job(id, query_id, status, error)`
-- `users(id, username, password_hash, role)`
+- `users(id, username, password_hash, role)`  
 
-**Tech stack**
+## Dataset
+- a simple "passengers" table in the same database as the Key entities. This the schema of it so users can use it.
+  ![dataset](docs/images/dataset.png)  
+
+## Tech stack
 - React for the frontend (built with Vite)
 - Spring Boot for the backend
 - MySQL as the persistence layer
@@ -59,5 +63,6 @@ The MySQL database is preloaded with the Titanic passengers dataset in a `passen
 ![User view with completed job](docs/images/user-job-finished.png)
 
 ### Admin account
+
 ![Admin view updating dataset](docs/images/admin-update-dataset.png)
 ![Admin view creating a user](docs/images/admin-create-user.png)
