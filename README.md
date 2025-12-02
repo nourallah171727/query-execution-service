@@ -10,6 +10,7 @@ The Query Execution Service is a backend-focused data-engineering tool that allo
 - **Result Caching** — responses are cached in-memory (simple concurrent hash map) and cleared when admins execute write queries that alter the dataset.
 - **Error-Resilient API** — backend validates inputs, enforces limits, and safely handles SQL (only dataset-related queries are accepted).
 - **Job History** — users can inspect past jobs and view results at any time.
+- **Job Recovery** — On application startup, the service scans the job_query table for jobs that are still marked as RUNNING. These represent queries that were in progress before the application crashed or shut down unexpectedly. The system automatically reschedules these jobs by dispatching each one into a new worker thread, ensuring they are completed and transitioned to the correct final state.
 - **Admin Management Tools** — admins can register new users.
 - **Frontend Demo UI** — lightweight React interface for inspecting queries, jobs, and results.
 
