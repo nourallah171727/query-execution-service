@@ -30,7 +30,7 @@ A simple monolithic app serves Vite-compiled React code directly from the backen
 - Spring Boot for the backend
 - MySQL as the persistence layer
 - Docker
-
+## Architecture overview
 ![Architecture overview](docs/images/architecture-flow.png)
 - The backend codebase follows an extensible, modular structure with clear separation between controllers, services, repositories, and domain logic. The goal is to keep the system easy to test, maintain, and extend.
 ## Testing
